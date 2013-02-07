@@ -1,0 +1,181 @@
+;Assignment 5: Producing Playful Polygons
+;Mira Hall, Kitt Nika, and Christine Tran
+
+;Problem 1:
+(define world
+  (image-new 200 200))
+
+(define franklin
+  (turtle-new world))
+
+(define turtle-polygon!
+  (lambda (turtle side-length sides)
+    (repeat!
+     sides
+     (let ((forwardness side-length)
+           (turn-by (/ 360 sides)))
+       (lambda (turtle)
+         (turtle-forward! turtle forwardness)
+         (turtle-turn! turtle turn-by))) turtle)))
+;Problem 2:
+
+
+(define turtle-spin-polygon!
+  (lambda (turtle side-length sides angle copies)
+    (repeat! copies
+             (let ((turn-again angle))
+               (lambda (turtle)
+                 (turtle-polygon! turtle side-length sides)
+                 (turtle-turn! turtle turn-again)))
+             turtle )
+    (turtle-turn! turtle (- 360 (* copies angle)))))
+
+> (turtle-teleport! franklin 100 100)
+> (turtle-face! franklin 0)
+;> (turtle-spin-polygon! franklin 50 4 20 5)
+;> (turtle-forward! franklin 100)
+
+;Problem 3:
+(define turtle-scale-polygon!
+  (lambda (turtle initial-side-length sides scale-factor copies)
+    (for-each turtle-polygon! (make-list copies turtle)
+              (map * (make-list copies initial-side-length)
+                   (map expt (make-list copies scale-factor) (iota copies)))
+              (make-list copies sides))))
+
+;Problem 4:
+(define turtle-centered-polygon!
+  (lambda (turtle radius sides)
+    (let ((interior-angle (/ (* 180 (- sides 2)) sides)))
+      (turtle-up! turtle)
+      (turtle-forward! turtle radius)
+      (turtle-down! turtle)
+      (turtle-turn! turtle (- 180 (/ interior-angle 2)))
+      (turtle-polygon! turtle (* 2 radius (sin (/ pi sides))) sides)
+      (turtle-turn! turtle (/ interior-angle 2))
+      (turtle-up! turtle)
+      (turtle-forward! turtle radius)
+      (turtle-turn! turtle 180)
+      (turtle-down! turtle))))   
+;;; Procedure: turtle-centered-polygon!
+;;;  
+;;; Parameters: turtle, a turtle
+;;;             radius, a number
+;;;             sides, a integer
+;;; Purpose:
+;;;   Draws a polygon with a desired number of sides and a desired size around turtle's original position.
+;;; Produces:
+;;;   poly, a side effect
+;;; Preconditions:
+;;;   radius > 0
+;;;   sides > 2
+;;; Postconditions:
+;;;   When sides = 2, produces a line.
+;;;   Poly is oriented so at least one corner has the same row value as the turtle's original position. 
+
+;b
+;(let ((interior-angle (/ (* 180 (- sides 2)) sides)))
+;;;; defines interior-angle as the value of that expression for the duration of the procedure
+;  (turtle-up! turtle)
+;;;; the turtle picks up the brush so that it can move to the edge of the polygon without drawing a line
+;  (turtle-forward! turtle radius)
+;;;; moves the turtle to the edge of the polygon so it can begin drawing
+;  (turtle-down! turtle)
+;;;; allows the turtle to begin drawing
+;  (turtle-turn! turtle (- 180 (/ interior-angle 2)))
+;;;; turns the turtle half the interior angle plus the exterior angle
+;  (turtle-polygon! turtle (* 2 radius (sin (/ pi sides))) sides)
+;;;; uses the earlier-defined turtle-polygon procedure to draw a polygon with an appropriate side length,
+;;;; which it gets by trigonometry. The radius inputed are two sides of a right triangle that has the
+;;;; side-length as its hypotenuse.
+;  (turtle-turn! turtle (/ interior-angle 2))
+;;;; turtle-polygon! returns the turtle to the original orientation, which in this case is half the
+;;;; interior angle plus the exeterior angle-- this turns it by another half of the interior angle. Since
+;;;; the exeterior angle and the interior angle add up to 180, this returns it to the turtle's beginning
+;;;; orientation, except facing the opposite direction (if the turtle was facing right at the beginning
+;;;; of the procedure, it is now facing left). This turns the turtle towards the center. 
+;  (turtle-up! turtle)
+;;;; stops the turtle from drawing so it can return to the center of the polygon incognito.
+;  (turtle-forward! turtle radius)
+;;;; moves the turtle to the center of the polygon
+;  (turtle-turn! turtle 180)
+;;;; turns the turtle back to its original orientation.
+;  (turtle-down! turtle))))
+;;;; puts the turtle's brush back down
+
+;;Problem 5
+(define turtle-spin-centered-polygon!
+  (lambda (turtle radius sides angle copies)
+    (repeat! copies
+             (let ((turn-again angle))
+               (lambda (turtle)
+                 (turtle-centered-polygon! turtle radius sides)
+                 (turtle-turn! turtle turn-again)))
+             turtle )
+    (turtle-turn! turtle (- 360 (* copies angle)))))
+
+;;Problem 6
+(define turtle-action-polygon!
+  (lambda (turtle side-length sides action!)
+    (repeat! sides
+             (let ((forwardness side-length)
+                   (turn-by (/ 360 sides)))
+               (lambda (turtle)
+                 (turtle-up! turtle)
+                 (turtle-forward! turtle forwardness)
+                 (turtle-turn! turtle turn-by)
+                 (turtle-down! turtle)
+                 (action! turtle))) turtle)))
+
+;(turtle-action-polygon! franklin 65 5 (lambda (turtle) (turtle-spin-polygon! turtle 20 4 15 5)))
+;(turtle-action-polygon! franklin 8 50 (lambda (turtle) (turtle-polygon! turtle 5 20 )))
+;
+;Problem 7
+;
+
+
+(define world2 (image-new 300 300))
+(define trusty (turtle-new world2))
+
+(define meta-SUNS!
+  (lambda (turtle radius color1 color2 brush)
+    (turtle-set-color! turtle color1)
+    (turtle-set-brush! turtle brush)
+    (let ((radius1 radius)
+          (colora color1)
+          (colorb color2))
+      (repeat
+       9
+       (lambda (turtle)
+         (turtle-up! turtle)
+         (turtle-forward! turtle radius1)
+         (turtle-down! turtle)
+         (turtle-turn! turtle 150)
+        
+         (repeat!
+          3
+          (lambda (turtle)
+            (turtle-set-color! turtle colorb)
+            (turtle-forward! turtle (* 2 radius1 (sin (/ pi 3))))
+            (turtle-set-color! turtle colora)
+            (turtle-turn! turtle 120)
+            (turtle-spin-centered-polygon! turtle (/ radius1 6) 3 30 6))
+          turtle)
+        
+         (turtle-turn! turtle (/ 60 2))
+         (turtle-up! turtle)
+         (turtle-forward! turtle radius1)
+         (turtle-turn! turtle 180)
+         (turtle-down! turtle)
+         (turtle-turn! turtle 20))
+      
+       turtle))))
+
+(turtle-teleport! trusty 150 150)
+(define background (rgb-new  18  64 171))
+(define big-sun (rgb-new 255 142   0 ))
+(define little-sun (rgb-new 255 194   0))
+(context-set-bgcolor! background)
+(meta-SUNS! trusty 100 little-sun big-sun "Circle Fuzzy (05)")
+
+(image-show world2)
